@@ -7,3 +7,6 @@
 # leJos stuff
 *.nxj
 *.nxd
+
+#vim
+*.swp
