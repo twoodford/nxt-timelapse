@@ -1,42 +1,80 @@
 from gi.repository import Gtk
 
+def _mkspin(maxval):
+        adj = Gtk.Adjustment(0, 0, maxval, 1, 10, 0)
+        spin = Gtk.SpinButton()
+        spin.set_adjustment(adj)
+        return spin
+
+class TimeEntry(Gtk.Box):
+    def __init__(self):
+        Gtk.Box.__init__(self, spacing=2)
+        self.hoursf = _mkspin(48)
+        self.minutesf = _mkspin(59)
+        self.secondsf = _mkspin(59)
+        self.pack_start(self.hoursf, False, True, 0)
+        self.pack_start(self.minutesf, False, True, 0)
+        self.pack_start(self.secondsf, False, True, 0)
+
+    def connect(self, event, func):
+        self.hoursf.connect(event, func)
+        self.minutesf.connect(event, func)
+        self.secondsf.connect(event, func)
+
+    @property
+    def totalseconds(self):
+        return ((self.hoursf.get_value()*60 + self.minutesf.get_value())*60 + self.secondsf.get_value())
+
+    @totalseconds.setter
+    def totalseconds(self, value):
+        self.hoursf.set_value(value//60//60)
+        self.minutesf.set_value((value//60)%60)
+        self.secondsf.set_value((value%60)%60)
+    
 class CameraParamWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="Camera Parameters")
-        self.timesettings = Gtk.Table()
-        self.timesettings.set_row_spacings(5)
-        self.timesettings.set_col_spacings(5)
+        self.set_border_width(10)
+        self.timesettings = Gtk.ListBox()
         self.add(self.timesettings)
 
-        self.shutterentry = Gtk.Entry()
-        shutterlabel = Gtk.Label()
-        shutterlabel.set_text("Shutter Speed")
-        self.timesettings.attach(self.shutterentry, 1, 2, 0, 1)
-        self.timesettings.attach(shutterlabel, 0, 1, 0, 1)
+        self.shutterentry = Gtk.Entry() # TODO show the list from gphoto
+        self._make_row(self.timesettings, "Shutter Time", self.shutterentry)
 
-        self.frame_entry = Gtk.Entry()
-        frame_label = Gtk.Label()
-        frame_label.set_text("Length of a Frame")
-        self.timesettings.attach(self.frame_entry, 1, 2, 1, 2)
-        self.timesettings.attach(frame_label, 0, 1, 1, 2)
+        self.frame_entry = _mkspin(90)
+        self.frame_entry.connect("value-changed", self.update_times)
+        self._make_row(self.timesettings, "Length of Frame", self.frame_entry) 
 
-        self.total_shots_entry = Gtk.Entry()
-        total_shots_label = Gtk.Label()
-        total_shots_label.set_text("Total Number of Shots")
-        self.timesettings.attach(self.total_shots_entry, 1, 2, 2, 3)
-        self.timesettings.attach(total_shots_label, 0, 1, 2, 3)
+        self.total_shots_entry = _mkspin(6000) # TODO adjust based on mem card space
+        self.total_shots_entry.connect("value-changed", self.update_times)
+        self._make_row(self.timesettings, "Total Shots", self.total_shots_entry)
 
-        self.play_time_entry = Gtk.Entry()
-        play_time_label = Gtk.Label()
-        play_time_label.set_text("Playback Time")
-        self.timesettings.attach(self.play_time_entry, 3, 4, 0, 1)
-        self.timesettings.attach(play_time_label, 2, 3, 0, 1)
+        self.play_time_entry = TimeEntry()
+        self.play_time_entry.connect("value-changed", self.update_numshots)
+        self._make_row(self.timesettings, "Playback Time", self.play_time_entry)
 
-        self.shooting_time_entry = Gtk.Entry()
-        shooting_time_label = Gtk.Label()
-        shooting_time_label.set_text("Time to shoot sequence")
-        self.timesettings.attach(self.shooting_time_entry, 3, 4, 1, 2)
-        self.timesettings.attach(shooting_time_label, 2, 3, 1, 2)
+        self.shooting_time_entry = TimeEntry()
+        self._make_row(self.timesettings, "Shooting Time", self.shooting_time_entry)
+
+    def _make_row(self, lbox, labeltxt, entry):
+        label = Gtk.Label(labeltxt, xalign=0)
+        hbox = Gtk.Box(spacing=6)
+        row = Gtk.ListBoxRow()
+        hbox.pack_start(label, True, True, 0)
+        hbox.pack_start(entry, False, True, 0)
+        row.add(hbox)
+        self.timesettings.add(row)
+
+    def update_times(self, sender):
+        framelen = self.frame_entry.get_value()
+        total_shots = self.total_shots_entry.get_value()
+        self.shooting_time_entry.totalseconds = framelen*total_shots
+        self.play_time_entry.totalseconds = total_shots/24 # TODO specify FPS of video
+
+    def update_numshots(self, sender):
+        playtime = self.play_time_entry.totalseconds
+        self.total_shots_entry.set_value(playtime*24)
+        self.update_times(self)
 
 
 if __name__=="__main__":
