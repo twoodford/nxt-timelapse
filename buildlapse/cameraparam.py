@@ -1,4 +1,5 @@
 from gi.repository import Gtk
+import multiprocessing
 
 def _mkspin(maxval):
         adj = Gtk.Adjustment(0, 0, maxval, 1, 10, 0)
@@ -30,12 +31,26 @@ class TimeEntry(Gtk.Box):
         self.hoursf.set_value(value//60//60)
         self.minutesf.set_value((value//60)%60)
         self.secondsf.set_value((value%60)%60)
-    
+
+def photocap(framelen, numshots):
+    import time
+    import buildlapse.gphoto2
+    camera = buildlapse.gphoto2.GPTether()
+    camera.connect_camera()
+    for i in range(numshots):
+        print(i)
+        camera.trigger_capture()
+        time.sleep(framelen)
+
 class CameraParamWindow(Gtk.Window):
+    running = False
+
     def __init__(self):
         Gtk.Window.__init__(self, title="Camera Parameters")
         self.set_border_width(10)
+        
         self.timesettings = Gtk.ListBox()
+        self.timesettings.set_selection_mode(Gtk.SelectionMode.NONE)
         self.add(self.timesettings)
 
         self.shutterentry = Gtk.Entry() # TODO show the list from gphoto
@@ -55,6 +70,11 @@ class CameraParamWindow(Gtk.Window):
 
         self.shooting_time_entry = TimeEntry()
         self._make_row(self.timesettings, "Shooting Time", self.shooting_time_entry)
+
+        self.start_button = Gtk.Button("Start Capture")
+        self.start_button.connect("clicked", self.startstop_cap)
+        self._make_row(self.timesettings, "Capture", self.start_button)
+
 
     def _make_row(self, lbox, labeltxt, entry):
         label = Gtk.Label(labeltxt, xalign=0)
@@ -76,6 +96,18 @@ class CameraParamWindow(Gtk.Window):
         self.total_shots_entry.set_value(playtime*24)
         self.update_times(self)
 
+    def startstop_cap(self, sender):
+        if self.running:
+            self.start_button.set_label("Start Capture")
+            self.running = False
+            self.subproc.terminate()
+        else:
+            self.start_button.set_label("Stop Capture")
+            self.running = True
+            framelen = int(self.frame_entry.get_value())
+            numshots = int(self.total_shots_entry.get_value())
+            self.subproc = multiprocessing.Process(target=photocap, args=(framelen, numshots))
+            self.subproc.start()
 
 if __name__=="__main__":
     win = CameraParamWindow()
