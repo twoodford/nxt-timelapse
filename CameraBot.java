@@ -18,6 +18,8 @@ import lejos.robotics.navigation.DifferentialPilot;
 public class CameraBot {
    public static final byte FORWARD = 0x10;
    public static final byte QUIT = 0x11;
+   public static final byte CONTINUOUS_FW = 0x12;
+   public static final byte STOP = 0x13;
    public static final byte OUT_GYRO = 0x50;
 
    private GyroDirectionFinder direction;
@@ -41,13 +43,21 @@ public class CameraBot {
             byte cmd = in.readByte();
             switch(cmd) {
                case FORWARD:
+                  System.out.println("forward");
                   int rot = in.readInt();
                   forward(rot);
                   out.writeByte(OUT_GYRO);
                   out.writeFloat(direction.getDegrees());
                   out.flush();
-                  //forward(rot);
-                  break;
+                  break srvLoop;
+               case CONTINUOUS_FW:
+                  System.out.println("continuous");
+                  pilot.setTravelSpeed(1);
+                  pilot.travel(100000, true);
+                  break srvLoop;
+               case STOP:
+                  pilot.stop();
+                  break srvLoop;
                case QUIT:
                   break srvLoop;
             }
@@ -55,27 +65,25 @@ public class CameraBot {
             break srvLoop;
          }
       }
-      
-      //recalibrate();
    }
 
    public void forward(int rot) {
-      int rotr = rot, rotl = rot;
-      if(direction.getDegreesCartesian()<-0.5f) {
-          rotl += direction.getDegreesCartesian();
-          rotr -= direction.getDegreesCartesian();
-      } else if (direction.getDegreesCartesian()>0.5f) {
-          rotl -= direction.getDegreesCartesian();
-          rotr += direction.getDegreesCartesian();
-      }
+      
       if(msw) {
-         Motor.A.rotate(rotl, true);
-         Motor.B.rotate(rotr, false);
+         Motor.A.rotate(rot, true);
+         Motor.B.rotate(rot, false);
       } else {
-         Motor.B.rotate(rotl, true);
-         Motor.A.rotate(rotr, false);
+         Motor.B.rotate(rot, true);
+         Motor.A.rotate(rot, false);
       }
       msw = !msw;
+      if(direction.getDegreesCartesian()<-0.5f) {
+          Motor.A.rotate((int) direction.getDegreesCartesian());
+          Motor.B.rotate((int) -direction.getDegreesCartesian());
+      } else if (direction.getDegreesCartesian()>0.5f) {
+          Motor.A.rotate((int) -direction.getDegreesCartesian());
+          Motor.B.rotate((int) direction.getDegreesCartesian());
+      }
       //pilot.travel(2);
       //pilot.rotate(direction.getDegreesCartesian());
       direction.resetCartesianZero();
