@@ -20,6 +20,7 @@ public class CameraBot {
    public static final byte QUIT = 0x11;
    public static final byte CONTINUOUS_FW = 0x12;
    public static final byte STOP = 0x13;
+   public static final byte CALIB_FW = 0x14;
    public static final byte OUT_GYRO = 0x50;
 
    private GyroDirectionFinder direction;
@@ -41,6 +42,7 @@ public class CameraBot {
       srvLoop: while(true) {
          try {
             byte cmd = in.readByte();
+            System.out.print(cmd+": ");
             switch(cmd) {
                case FORWARD:
                   System.out.println("forward");
@@ -49,15 +51,25 @@ public class CameraBot {
                   out.writeByte(OUT_GYRO);
                   out.writeFloat(direction.getDegrees());
                   out.flush();
-                  break srvLoop;
+                  break;
                case CONTINUOUS_FW:
                   System.out.println("continuous");
                   pilot.setTravelSpeed(1);
                   pilot.travel(100000, true);
-                  break srvLoop;
+                  break;
+               case CALIB_FW:
+                  System.out.print("calibfw...");
+                  int rotl = in.readInt();
+                  int rotr = in.readInt();
+                  System.out.println("exec");
+                  forward(rotl, rotr);
+                  out.writeByte(OUT_GYRO);
+                  out.writeFloat(direction.getDegrees());
+                  out.flush();
+                  break;
                case STOP:
                   pilot.stop();
-                  break srvLoop;
+                  break;
                case QUIT:
                   break srvLoop;
             }
@@ -65,6 +77,11 @@ public class CameraBot {
             break srvLoop;
          }
       }
+   }
+
+   public void forward(int rotl, int rotr) {
+       Motor.A.rotate(rotl, true);
+       Motor.B.rotate(rotr, false);
    }
 
    public void forward(int rot) {
@@ -76,14 +93,7 @@ public class CameraBot {
          Motor.B.rotate(rot, true);
          Motor.A.rotate(rot, false);
       }
-      msw = !msw;
-      if(direction.getDegreesCartesian()<-0.5f) {
-          Motor.A.rotate((int) direction.getDegreesCartesian());
-          Motor.B.rotate((int) -direction.getDegreesCartesian());
-      } else if (direction.getDegreesCartesian()>0.5f) {
-          Motor.A.rotate((int) -direction.getDegreesCartesian());
-          Motor.B.rotate((int) direction.getDegreesCartesian());
-      }
+      msw = !msw; 
       //pilot.travel(2);
       //pilot.rotate(direction.getDegreesCartesian());
       direction.resetCartesianZero();

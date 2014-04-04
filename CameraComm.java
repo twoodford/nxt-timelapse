@@ -30,13 +30,14 @@ public class CameraComm {
       
       if(args.length>0) {
           System.out.println("CLI command: "+args[0]);
-          String cmd = args[0];
+          String[] cmd = new String[args.length-1];
+          System.arraycopy(args, 1, cmd, 0, cmd.length);
           cmd(conn, cmd);
       } else {
           String cmd;
           BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
           while(!(cmd = bufferedReader.readLine()).equals("quit")) {
-              cmd(conn, cmd);
+              cmd(conn, cmd.split(" "));
           }
       }
       DataOutputStream out = new DataOutputStream(conn.getOutputStream());
@@ -45,11 +46,11 @@ public class CameraComm {
       out.close();
    }
 
-   public static void cmd(NXTConnector conn, String cmd) throws IOException {
+   public static void cmd(NXTConnector conn, String[] cmd) throws IOException {
       DataOutputStream out = new DataOutputStream(conn.getOutputStream());
       DataInputStream in = new DataInputStream(conn.getInputStream());
       
-      if(cmd.equals("forward")){
+      if(cmd[0].equals("forward")){
           out.writeByte(CameraBot.FORWARD);
           out.writeInt(80);
           out.flush();
@@ -58,11 +59,20 @@ public class CameraComm {
               System.out.println("Gyro position: "+in.readFloat());
           }
           try{ Thread.sleep(2000); } catch (InterruptedException ie) {}
-      } else if (cmd.equals("continuous")) {
+      } else if (cmd[0].equals("continuous")) {
           out.writeByte(CameraBot.CONTINUOUS_FW);
           out.flush();
-      } else if (cmd.equals("stop")) {
+      } else if (cmd[0].equals("stop")) {
           out.writeByte(CameraBot.STOP);
+          out.flush();
+      } else if (cmd[0].equals("calibfw")) {
+          out.writeByte(CameraBot.CALIB_FW);
+          out.writeInt(Integer.parseInt(cmd[1]));
+          out.writeInt(Integer.parseInt(cmd[2]));
+          out.flush();
+          byte outType = in.readByte();
+      } else if (cmd[0].equals("quit")) {
+          out.writeByte(CameraBot.QUIT);
           out.flush();
       }
    }
