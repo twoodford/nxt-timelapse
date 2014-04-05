@@ -13,5 +13,6 @@ Prerequisites
 Building and Running
 --------------------
 
-Run the `build.sh` function to compile and link the relevant files, and upload and run the program on the NXT.  Connect a USB cable to the robot and run `moverobot.sh` to ensure that the movement works, then use `simeplerunner.sh` with a camera connected via PTP/MTP to create a timelapse.
+Run `make` to compile and link the relevant files, and upload and run the program on the NXT.  Connect a USB cable to the robot and run `moverobot.sh` to ensure that the movement works, then use `simeplerunner.sh` with a camera connected via PTP/MTP to create a timelapse.
 
+A GUI is in the works that will allow more precise control of the robot and camera.  It uses a C extension to connect with the camera which requires Cython and libgphoto2 to build.
