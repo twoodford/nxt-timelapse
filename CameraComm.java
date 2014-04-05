@@ -71,6 +71,9 @@ public class CameraComm {
           out.writeInt(Integer.parseInt(cmd[2]));
           out.flush();
           byte outType = in.readByte();
+          if (outType==CameraBot.OUT_GYRO) {
+              System.err.println("Gyro position: "+in.readFloat());
+          }
       } else if (cmd[0].equals("quit")) {
           out.writeByte(CameraBot.QUIT);
           out.flush();
