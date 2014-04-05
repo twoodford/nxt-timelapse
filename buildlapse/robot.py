@@ -43,7 +43,7 @@ class MovementControls(Gtk.Box):
 
         distadj = Gtk.Adjustment(100, 0, 5000, 1, 10)
         self.distance = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=distadj)
-        self.distance.add_mark(100, Gtk.PositionType.TOP, "100")
+        self.distance.add_mark(100, Gtk.PositionType.TOP, "")
         self.distance.set_hexpand(True)
         self.distance.set_digits(0)
         self._make_row(self.settings, "Distance Moved", self.distance)
