@@ -80,6 +80,8 @@ public class CameraBot {
    }
 
    public void forward(int rotl, int rotr) {
+       Motor.A.setSpeed(300);
+       Motor.B.setSpeed(300);
        Motor.A.rotate(rotl, true);
        Motor.B.rotate(rotr, false);
    }
