@@ -1,6 +1,7 @@
 # main.py
 # Tie everything together for maximum fun
 import time
+import threading
 from gi.repository import Gtk
 
 import buildlapse.robot
@@ -15,7 +16,7 @@ def runloop(camera, robot, campanel, movepanel):
         dist = movepanel.distance.get_value()
         robot.calibfw(dist-cal, dist+cal)
         # This is not exactly the right time, but it will do for now
-        time.sleep(campanel.totalseconds)
+        time.sleep(campanel.frame_entry.totalseconds)
 
 class CameraParams(buildlapse.cameraparam.CameraParamWindow):
     def __init__(self):
