@@ -8,7 +8,7 @@ import buildlapse.robot
 import buildlapse.cameraparam
 import buildlapse.gphoto2
 
-def runloop(camera, robot, campanel, movepanel):
+def runloop(camera, robot, campanel, movepanel, framelen):
     while campanel.running:
         camera.trigger_capture()
         time.sleep(0.5)
@@ -16,7 +16,7 @@ def runloop(camera, robot, campanel, movepanel):
         dist = movepanel.distance.get_value()
         robot.calibfw(dist-cal, dist+cal)
         # This is not exactly the right time, but it will do for now
-        time.sleep(campanel.frame_entry.totalseconds)
+        time.sleep(framelen)
 
 class CameraParams(buildlapse.cameraparam.CameraParamWindow):
     def __init__(self):
@@ -36,7 +36,7 @@ class CameraParams(buildlapse.cameraparam.CameraParamWindow):
             camera = buildlapse.gphoto2.GPTether()
             camera.connect_camera()
             robot = buildlapse.robot.RobotCtl()
-            thr = threading.Thread(target=runloop, args=(camera, robot, self, self.mvpanel))
+            thr = threading.Thread(target=runloop, args=(camera, robot, self, self.mvpanel,framelen))
             thr.start()
 
 def run():
