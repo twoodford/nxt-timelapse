@@ -1,7 +1,7 @@
 nxt-timelapse
 =============
 
-Tool to create movement in a timelapse video using a Lego Mindstorms NXT robot and the lejos firmware
+Tool to create movement in a timelapse video using a Lego Mindstorms NXT robot and the lejos firmware.  This version is for the old version of the software designed for use with a standard two-wheel vehicle.  I am discontinuing this approach and instead using a single rail to increase the accuracy of movement and the places I can set up the camera.
 
 Prerequisites
 -------------
