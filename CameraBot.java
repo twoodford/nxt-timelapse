@@ -55,12 +55,10 @@ public class CameraBot {
 
    public void forward(int rot) {
        Motor.A.rotate(rot, true);
-       Motor.B.rotate(rot, false);
    }
 
    public static void main(String[] args){
       Motor.A.setSpeed(300);
-      Motor.B.setSpeed(300);
       CameraBot bot = new CameraBot();
       Sound.beep();
       runLoop: while(true) {
