@@ -55,25 +55,10 @@ public class CameraComm {
           out.writeInt(80);
           out.flush();
           byte outType = in.readByte();
-          if (outType==CameraBot.OUT_GYRO) {
-              System.out.println("Gyro position: "+in.readFloat());
+          if (outType==CameraBot.DONE) {
+              System.out.println("Finished");
           }
-          try{ Thread.sleep(2000); } catch (InterruptedException ie) {}
-      } else if (cmd[0].equals("continuous")) {
-          out.writeByte(CameraBot.CONTINUOUS_FW);
-          out.flush();
-      } else if (cmd[0].equals("stop")) {
-          out.writeByte(CameraBot.STOP);
-          out.flush();
-      } else if (cmd[0].equals("calibfw")) {
-          out.writeByte(CameraBot.CALIB_FW);
-          out.writeInt(Integer.parseInt(cmd[1]));
-          out.writeInt(Integer.parseInt(cmd[2]));
-          out.flush();
-          byte outType = in.readByte();
-          if (outType==CameraBot.OUT_GYRO) {
-              System.err.println("Gyro position: "+in.readFloat());
-          }
+          try{ Thread.sleep(100); } catch (InterruptedException ie) {}
       } else if (cmd[0].equals("quit")) {
           out.writeByte(CameraBot.QUIT);
           out.flush();
