@@ -2,6 +2,6 @@
 while true; do
    gphoto2 --trigger-capture
    sleep 2
-   sh moverobot.sh
+   nxjpc CameraComm forward
    sleep 3
 done
