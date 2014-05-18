@@ -1,5 +1,6 @@
 # main.py
 # Tie everything together for maximum fun
+import threading
 import time
 from gi.repository import Gtk
 
@@ -9,7 +10,7 @@ import buildlapse.gphoto2
 import buildlapse.gui
 
 def runloop(camera, robot, settings):
-    while campanel.running:
+    while settings.running:
         if settings.cam_check.checked:
             camera.trigger_capture()
             if settings.move_check.checked:
@@ -18,7 +19,7 @@ def runloop(camera, robot, settings):
                 dist = movepanel.distance.get_value()
                 robot.calibfw(dist-cal, dist+cal)
             # This is not exactly the right time, but it will do for now
-            time.sleep(settings.campanel.totalseconds)
+            time.sleep(settings.cam_param.frame_entry.get_value())
 
 class MainSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
@@ -36,6 +37,8 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         self.start_button = Gtk.Button("Start Capture")
         self.start_button.connect("clicked", self.startstop_cap)
         self._make_row("Capture", self.start_button)
+
+        self.running = False
     
     def _add_row(self, box):
         row = Gtk.ListBoxRow()
@@ -64,6 +67,8 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         else:
             self.start_button.set_label("Stop Capture")
             self.running = True
+            camera = buildlapse.gphoto2.GPTether()
+            camera.connect_camera()
             robot = buildlapse.robot.RobotCtl()
             thr = threading.Thread(target=runloop, args=(camera, robot, self))
             thr.start()
