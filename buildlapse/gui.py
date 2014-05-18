@@ -18,6 +18,10 @@ class CheckEntry(Gtk.Box):
     def checked(self):
         return self.check.get_active()
 
+    @checked.setter
+    def checked(self, value):
+        self.check.set_active(value)
+
 class ListBoxWindow(Gtk.Window):
     def __init__(self, title):
         Gtk.Window.__init__(self, title=title)
