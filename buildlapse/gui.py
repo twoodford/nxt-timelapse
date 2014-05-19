@@ -39,3 +39,35 @@ class ListBoxWindow(Gtk.Window):
         row.add(hbox)
         self.listbox.add(row)
 
+def mkspin(maxval):
+    adj = Gtk.Adjustment(0, 0, maxval, 1, 10, 0)
+    spin = Gtk.SpinButton()
+    spin.set_adjustment(adj)
+    return spin
+
+class TimeEntry(Gtk.Box):
+    def __init__(self):
+        Gtk.Box.__init__(self, spacing=2)
+        self.hoursf = mkspin(48)
+        self.minutesf = mkspin(59)
+        self.secondsf = mkspin(59)
+        self.pack_start(self.hoursf, False, True, 0)
+        self.pack_start(self.minutesf, False, True, 0)
+        self.pack_start(self.secondsf, False, True, 0)
+
+    def connect(self, event, func):
+        self.hoursf.connect(event, func)
+        self.minutesf.connect(event, func)
+        self.secondsf.connect(event, func)
+
+    @property
+    def totalseconds(self):
+        return ((self.hoursf.get_value()*60 + self.minutesf.get_value())*60 + self.secondsf.get_value())
+
+    @totalseconds.setter
+    def totalseconds(self, value):
+        self.hoursf.set_value(value//60//60)
+        self.minutesf.set_value((value//60)%60)
+        self.secondsf.set_value((value%60)%60)
+
+
