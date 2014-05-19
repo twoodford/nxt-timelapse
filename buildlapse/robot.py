@@ -3,7 +3,9 @@
 import subprocess
 import threading
 import time
+
 from gi.repository import Gtk
+import buildlapse.gui
 
 class RobotCtl(object):
     def __init__(self):
@@ -14,16 +16,18 @@ class RobotCtl(object):
         self.sproc.stdin.write(bytes(msg, "ascii"))
         self.sproc.stdin.flush()
 
-    def calibfw(self, left, right):
-        self._write("calibfw {0} {1}\n".format(int(left), int(right)))
+    def forward(self, degrees):
+        self._write("forward {0}\n".format(int(degrees)))
 
     def close(self):
         self._write("quit\n")
         #self.sproc.communicate()
 
-class TimelapseMotionSettings(Gtk.Window):
+class TimelapseMotionSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
-        Gtk.Window.__init__(self, title="Timelapse Motion")
+        super().__init__("Timelapse Motion")
+        self.linear = buildlapse.gui.mkspin(3600)
+        self._make_row("Linear Degrees Per Capture", self.linear)
 
 if __name__=="__main__":
     win = RobotTestWindow()
