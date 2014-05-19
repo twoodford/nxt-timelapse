@@ -13,13 +13,16 @@ def runloop(camera, robot, settings):
     while settings.running:
         if settings.cam_check.checked:
             camera.trigger_capture()
-            if settings.move_check.checked:
-                time.sleep(0.5)
-                cal = movepanel.calib.get_value()
-                dist = movepanel.distance.get_value()
-                robot.calibfw(dist-cal, dist+cal)
+        if settings.move_check.checked:
+            time.sleep(0.5)
+            dist = settings.move_param.linear.get_value()
+            robot.forward(dist)
+        if settings.cam_check.checked:
             # This is not exactly the right time, but it will do for now
             time.sleep(settings.cam_param.frame_entry.get_value())
+    if settings.move_check:
+        print("Closing robot connection")
+        robot.close()
 
 class MainSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
@@ -30,7 +33,7 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         self.cam_param = buildlapse.cameraparam.CameraParamWindow()
 
         self.move_check = buildlapse.gui.CheckEntry("Timelapse Motion Control", self.movetoggle)
-        self.move_check.set_sensitive(False)
+        #self.move_check.set_sensitive(False)
         self.listbox.add(self.move_check)
         self.move_param = buildlapse.robot.TimelapseMotionSettings()
 
@@ -67,9 +70,15 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         else:
             self.start_button.set_label("Stop Capture")
             self.running = True
-            camera = buildlapse.gphoto2.GPTether()
-            camera.connect_camera()
-            robot = buildlapse.robot.RobotCtl()
+            if self.cam_check.checked:
+                camera = buildlapse.gphoto2.GPTether()
+                camera.connect_camera()
+            else:
+                camera = None
+            if self.move_check.checked:
+                robot = buildlapse.robot.RobotCtl()
+            else:
+                robot = None
             thr = threading.Thread(target=runloop, args=(camera, robot, self))
             thr.start()
 
