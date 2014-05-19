@@ -52,7 +52,7 @@ public class CameraComm {
       
       if(cmd[0].equals("forward")){
           out.writeByte(CameraBot.FORWARD);
-          out.writeInt(80);
+          out.writeInt(Integer.parseInt(cmd[1]));
           out.flush();
           byte outType = in.readByte();
           if (outType==CameraBot.DONE) {
