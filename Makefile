@@ -1,4 +1,4 @@
-all: upload CameraBot.class
+all: upload CameraComm.class
 
 CameraBot.class: CameraBot.java
 	nxjc CameraBot.java
