@@ -26,7 +26,7 @@ class RobotCtl(object):
 class TimelapseMotionSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
         super().__init__("Timelapse Motion")
-        self.linear = buildlapse.gui.mkspin(3600)
+        self.linear = buildlapse.gui.mkspin2(-3600, 3600)
         self._make_row("Linear Degrees Per Capture", self.linear)
 
 if __name__=="__main__":

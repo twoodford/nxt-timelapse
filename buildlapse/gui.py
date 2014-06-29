@@ -40,7 +40,10 @@ class ListBoxWindow(Gtk.Window):
         self.listbox.add(row)
 
 def mkspin(maxval):
-    adj = Gtk.Adjustment(0, 0, maxval, 1, 10, 0)
+    return mkspin2(0, maxval)
+    
+def mkspin2(minval, maxval):
+    adj = Gtk.Adjustment(0, minval, maxval, 1, 10, 0)
     spin = Gtk.SpinButton()
     spin.set_adjustment(adj)
     return spin
