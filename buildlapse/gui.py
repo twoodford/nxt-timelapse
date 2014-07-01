@@ -73,4 +73,22 @@ class TimeEntry(Gtk.Box):
         self.minutesf.set_value((value//60)%60)
         self.secondsf.set_value((value%60)%60)
 
+derivlabels = ["Position", "Velocity", "Acceleration", "Jerk"]
+
+class NDerivativeEntry(Gtk.Box):
+    def __init__(self, derivatives=2, rangesize=60): # Default to having position, velocity, and acceleration
+        Gtk.Box.__init__(self, spacing=2)
+        self.spinners = [mkspin2(-rangesize, rangesize) for i in range(0, derivatives + 1)]
+        for spinner in self.spinners:
+            self.pack_start(spinner, False, True, 0)
+        #for i in range(0, min(derivatives, len(derivlabels)) + 1):
+        #    self.spinners[i].tooltip-text = derivlabels[i]
+
+    def doupdate(self, time_passed):
+        for i in range(len(self.spinners), 1, -1):
+            self.spinners[i-1].set_value(self.spinners[i].get_value() * time_passed)
+
+    @property
+    def position(self):
+        return self.spinners[0].get_value()
 
