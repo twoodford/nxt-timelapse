@@ -12,6 +12,7 @@ import buildlapse.gui
 def runloop(camera, robot, settings, progress):
     i = 0
     while settings.running:
+        st_time = time.monotonic()
         if settings.cam_check.checked:
             if settings.cam_param.total_shots < i:
                 break
@@ -22,8 +23,13 @@ def runloop(camera, robot, settings, progress):
             robot.forward(dist)
         if settings.cam_check.checked:
             progress.fraction = i/settings.cam_param.total_shots
-            # This is not exactly the right time, but it will do for now
-            time.sleep(settings.cam_param.frame_entry.get_value())
+            # Triggering the capture and moving the robot takes time (although, 
+            # bizarrely, trigger_capture() doesn't necessarily wait until the 
+            # shutter is closed).  Take this time into account to improve both 
+            # accuracy (fixed time delays) and precision (variable latency in 
+            # USB communication).
+            elapsed_time = time.monotonic() - st_time
+            time.sleep(settings.cam_param.frame_entry.get_value() - elapsed_time)
         i+=1
     if settings.move_check.checked:
         print("Closing robot connection")
