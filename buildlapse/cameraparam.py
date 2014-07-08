@@ -37,7 +37,11 @@ class CameraParamWindow(ListBoxWindow):
     def update_numshots(self, sender):
         playtime = self.play_time_entry.totalseconds
         self.total_shots_entry.set_value(playtime*24)
-        self.update_times(self) 
+        self.update_times(self)
+
+    @property
+    def total_shots(self):
+        return self.total_shots_entry.get_value()
 
 if __name__=="__main__":
     win = CameraParamWindow()

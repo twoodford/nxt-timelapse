@@ -9,20 +9,27 @@ import buildlapse.cameraparam
 import buildlapse.gphoto2
 import buildlapse.gui
 
-def runloop(camera, robot, settings):
+def runloop(camera, robot, settings, progress):
+    i = 0
     while settings.running:
         if settings.cam_check.checked:
+            if settings.cam_param.total_shots < i:
+                break
             camera.trigger_capture()
         if settings.move_check.checked:
             time.sleep(0.5)
-            dist = settings.move_param.linear.get_value()
+            dist = settings.move_param.linear.position
             robot.forward(dist)
         if settings.cam_check.checked:
+            progress.fraction = i/settings.cam_param.total_shots
             # This is not exactly the right time, but it will do for now
             time.sleep(settings.cam_param.frame_entry.get_value())
-    if settings.move_check:
+        i+=1
+    if settings.move_check.checked:
         print("Closing robot connection")
         robot.close()
+    settings.start_button.set_label("Start Capture")
+    progress.hide()
 
 class MainSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
@@ -40,6 +47,10 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         self.start_button = Gtk.Button("Start Capture")
         self.start_button.connect("clicked", self.startstop_cap)
         self._make_row("Capture", self.start_button)
+
+        self.progress = ProgressWindow()
+        self.progress.set_no_show_all(True)
+        self.listbox.add(self.progress)
 
         self.running = False
     
@@ -65,7 +76,6 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
 
     def startstop_cap(self, sender):
         if self.running:
-            self.start_button.set_label("Start Capture")
             self.running = False
         else:
             self.start_button.set_label("Stop Capture")
@@ -79,8 +89,24 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
                 robot = buildlapse.robot.RobotCtl()
             else:
                 robot = None
-            thr = threading.Thread(target=runloop, args=(camera, robot, self))
+            self.progress.set_no_show_all(False)
+            self.progress.show_all()
+            thr = threading.Thread(target=runloop, args=(camera, robot, self, self.progress))
             thr.start()
+
+class ProgressWindow(Gtk.Box):
+    def __init__(self):
+        super().__init__()
+        self.progress = Gtk.ProgressBar()
+        self.add(self.progress)
+
+    @property
+    def fraction(self):
+        return self.progress.fraction
+
+    @fraction.setter
+    def fraction(self, value):
+        self.progress.set_fraction(value)
 
 def run():
     ctl = MainSettings()
