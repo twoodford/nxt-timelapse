@@ -2,6 +2,8 @@
 # Generic GUI crap
 from gi.repository import Gtk
 
+import time
+
 class CheckEntry(Gtk.Box):
     def __init__(self, labeltxt, togglef = None):
         Gtk.Box.__init__(self, spacing=2)
@@ -84,9 +86,19 @@ class NDerivativeEntry(Gtk.Box):
         #for i in range(0, min(derivatives, len(derivlabels)) + 1):
         #    self.spinners[i].tooltip-text = derivlabels[i]
 
-    def doupdate(self, time_passed):
-        for i in range(len(self.spinners), 1, -1):
-            self.spinners[i-1].set_value(self.spinners[i].get_value() * time_passed)
+    def doupdate(self, time_passed=-1):
+        if time_passed==-1:
+            time_passed = 0
+            try:
+                now = time.monotonic()
+                time_passed = now - self.prevtime
+                self.prevtime = now
+            except AttributeError:
+                self.prevtime = time.monotonic()
+        for i in range(len(self.spinners) - 1, 0, -1):
+            val = self.spinners[i].get_value() * time_passed
+            val += self.spinners[i-1].get_value()
+            self.spinners[i-1].set_value(val)
 
     @property
     def position(self):

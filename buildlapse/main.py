@@ -2,7 +2,7 @@
 # Tie everything together for maximum fun
 import threading
 import time
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 import buildlapse.robot
 import buildlapse.cameraparam
@@ -15,10 +15,13 @@ def runloop(camera, robot, settings, progress):
         st_time = time.monotonic()
         if settings.cam_check.checked:
             if settings.cam_param.total_shots < i:
+                settings.running = False
                 break
             camera.trigger_capture()
         if settings.move_check.checked:
             time.sleep(0.5)
+            # Can't call this outside of main thread because GTK isn't thread-safe
+            #settings.move_param.linear.doupdate()
             dist = settings.move_param.linear.position
             robot.forward(dist)
         if settings.cam_check.checked:
@@ -36,6 +39,15 @@ def runloop(camera, robot, settings, progress):
         robot.close()
     settings.start_button.set_label("Start Capture")
     progress.hide()
+
+def gui_update(settings):
+    settings.move_param.linear.doupdate()
+    if settings.running:
+        if settings.cam_check.checked:
+            GLib.timeout_add(settings.cam_param.frame_entry.get_value() * 1000, settings)
+        else:
+            GLib.timeout_add(1000, gui_update, settings)
+    return False
 
 class MainSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
@@ -86,6 +98,7 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         else:
             self.start_button.set_label("Stop Capture")
             self.running = True
+            self.numshots = 0
             if self.cam_check.checked:
                 camera = buildlapse.gphoto2.GPTether()
                 camera.connect_camera()
@@ -99,6 +112,7 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
             self.progress.show_all()
             thr = threading.Thread(target=runloop, args=(camera, robot, self, self.progress))
             thr.start()
+            gui_update(self)
 
 class ProgressWindow(Gtk.Box):
     def __init__(self):
