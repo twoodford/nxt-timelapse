@@ -12,7 +12,7 @@ class CameraParamWindow(ListBoxWindow):
         self.shutterentry = Gtk.Entry() # TODO show the list from gphoto
         self._make_row("Shutter Time", self.shutterentry)
 
-        self.frame_entry = mkspin(90)
+        self.frame_entry = mkspin(360)
         self.frame_entry.connect("value-changed", self.update_times)
         self._make_row("Length of Frame", self.frame_entry) 
 
