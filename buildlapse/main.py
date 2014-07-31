@@ -8,13 +8,14 @@ import buildlapse.robot
 import buildlapse.cameraparam
 import buildlapse.gphoto2
 import buildlapse.gui
+import buildlapse.timing
 
 def runloop(camera, robot, settings, progress):
     i = 0
     while settings.running:
         st_time = time.monotonic()
         if settings.cam_check.checked:
-            if settings.cam_param.total_shots < i:
+            if settings.time_param.total_shots < i:
                 settings.running = False
                 break
             camera.trigger_capture()
@@ -25,14 +26,14 @@ def runloop(camera, robot, settings, progress):
             dist = settings.move_param.linear.position
             robot.forward(dist)
         if settings.cam_check.checked:
-            progress.fraction = i/settings.cam_param.total_shots
+            progress.fraction = i/settings.time_param.total_shots
             # Triggering the capture and moving the robot takes time (although, 
             # bizarrely, trigger_capture() doesn't necessarily wait until the 
             # shutter is closed).  Take this time into account to improve both 
             # accuracy (fixed time delays) and precision (variable latency in 
             # USB communication).
             elapsed_time = time.monotonic() - st_time
-            time.sleep(settings.cam_param.frame_entry.get_value() - elapsed_time)
+            time.sleep(settings.time_param.frame_entry.get_value() - elapsed_time)
         i+=1
     if settings.move_check.checked:
         print("Closing robot connection")
@@ -44,7 +45,7 @@ def gui_update(settings):
     settings.move_param.linear.doupdate()
     if settings.running:
         if settings.cam_check.checked:
-            GLib.timeout_add(settings.cam_param.frame_entry.get_value() * 1000, settings)
+            GLib.timeout_add(settings.time_param.frame_entry.get_value() * 1000, settings)
         else:
             GLib.timeout_add(1000, gui_update, settings)
     return False
@@ -53,11 +54,14 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
     def __init__(self):
         super().__init__("BuildLapse Settings")
         
-        self.cam_check = buildlapse.gui.CheckEntry("Timelapse Camera Capture", self.camtoggle)
+        self.cam_check = buildlapse.gui.CheckEntry("Camera Capture", self.camtoggle)
         self.listbox.add(self.cam_check)
         self.cam_param = buildlapse.cameraparam.CameraParamWindow()
 
-        self.move_check = buildlapse.gui.CheckEntry("Timelapse Motion Control", self.movetoggle)
+        self.time_param = buildlapse.timing.TimingParamWindow()
+        self.time_param.show_all()
+
+        self.move_check = buildlapse.gui.CheckEntry("Motion Control", self.movetoggle)
         #self.move_check.set_sensitive(False)
         self.listbox.add(self.move_check)
         self.move_param = buildlapse.robot.TimelapseMotionSettings()
