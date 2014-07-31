@@ -29,6 +29,18 @@ class TimelapseMotionSettings(buildlapse.gui.ListBoxWindow):
         self.linear = buildlapse.gui.NDerivativeEntry(rangesize=720)
         self._make_row("Linear Degrees Per Capture", self.linear)
 
+    def action(self):
+        class _moveaction(object):
+            def setup(slf):
+                slf.robot = RobotCtl()
+
+            def __call__(slf):
+                slf.robot.forward(self.linear.position)
+
+            def cleanup(slf):
+                print("Closing robot connection")
+                robot.close()
+
 if __name__=="__main__":
     win = RobotTestWindow()
     win.connect("delete-event", Gtk.main_quit)

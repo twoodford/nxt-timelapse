@@ -104,3 +104,17 @@ class NDerivativeEntry(Gtk.Box):
     def position(self):
         return self.spinners[0].get_value()
 
+class ProgressWindow(Gtk.Box):
+    def __init__(self):
+        super().__init__()
+        self.progress = Gtk.ProgressBar()
+        self.add(self.progress)
+
+    @property
+    def fraction(self):
+        return self.progress.fraction
+
+    @fraction.setter
+    def fraction(self, value):
+        self.progress.set_fraction(value)
+
