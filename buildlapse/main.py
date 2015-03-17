@@ -13,7 +13,10 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         
         self.cam_check = buildlapse.gui.CheckEntry("Camera Capture", self.camtoggle)
         self.listbox.add(self.cam_check)
-        self.cam_param = buildlapse.cameraparam.CameraParamWindow()
+        # Pick one.  CameraParam doesn't work for me now, possibly because 
+        # I need to pull pictures off the camera for some reason.
+        self.cam_param = buildlapse.cameraparam.CLICallCamParam()
+        #self.cam_param = buildlapse.cameraparam.CameraParamWindow()
 
         # Why pass self?  Because thread safety. Ugliness can't always
         # go away :(
@@ -48,7 +51,7 @@ class MainSettings(buildlapse.gui.ListBoxWindow):
         self.update_timer_actions()
 
     def update_timer_actions(self):
-        actions = []
+        actions = [buildlapse.timing._testaction()]
         if self.cam_check.checked:
             actions.append(self.cam_param.action())
         if self.move_check.checked:
