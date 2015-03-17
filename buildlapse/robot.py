@@ -39,7 +39,9 @@ class TimelapseMotionSettings(buildlapse.gui.ListBoxWindow):
 
             def cleanup(slf):
                 print("Closing robot connection")
-                robot.close()
+                slf.robot.close()
+
+        return _moveaction()
 
 if __name__=="__main__":
     win = RobotTestWindow()

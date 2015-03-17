@@ -71,6 +71,7 @@ class TimingParamWindow(ListBoxWindow):
             self.numshots = 0
             # TODO: do setup here somewhere?
             self.progress.set_no_show_all(False)
+            self.progress.show_text = True
             self.progress.show_all()
             thr = threading.Thread(target=self.runloop)
             thr.start()
@@ -79,7 +80,7 @@ class TimingParamWindow(ListBoxWindow):
             # This is an unfortunate piece of ugliness I couldn't remove
             def gui_update(settings):
                 settings.move_param.linear.doupdate()
-                if settings.running:
+                if self.running:
                    GLib.timeout_add(settings.time_param.frame_entry.get_value() * 1000, gui_update, settings)
                 return False
             gui_update(self.mset)
@@ -89,13 +90,14 @@ class TimingParamWindow(ListBoxWindow):
             action.setup()
         i = 0
         while self.running:
-            if self.total_shots < i:
+            if self.total_shots <= i:
                 self.running = False
                 break
             st_time = time.monotonic()
             for action in self.actions:
                 action()
             self.progress.fraction = i / self.total_shots
+            self.progress.text = str(i)
             # Triggering the capture and moving the robot takes time (although, 
             # bizarrely, trigger_capture() doesn't necessarily wait until the 
             # shutter is closed).  Take this time into account to improve both 
