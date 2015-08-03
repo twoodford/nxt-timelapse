@@ -1,45 +1,13 @@
-cdef extern from "gphoto2/gphoto2-camera.h":
-    ctypedef struct Camera:
-        pass
-    ctypedef struct GPContext:
-        pass
-    ctypedef struct CameraWidget:
-        pass
-    ctypedef void (* GPContextMessageFunc)  (GPContext *context, const char *text, void *data)
-    ctypedef void (* GPContextErrorFunc)    (GPContext *context, const char *text, void *data)
-    ctypedef struct CameraWidget:
-        pass
-
-    cdef int GP_OK
-
-    int gp_camera_new (Camera **camera)
-    int gp_camera_init (Camera *camera, GPContext *context)
-    int gp_camera_trigger_capture(Camera *camera, GPContext *context)
-    int gp_camera_get_config(Camera *camera, CameraWidget **window, GPContext *context)
-    int gp_camera_unref (Camera *camera)
-    
-    GPContext *gp_context_new ()
-    void gp_context_set_error_func(GPContext *text, GPContextErrorFunc func, void *data)
-    void gp_context_set_message_func(GPContext *text, GPContextMessageFunc func, void *data)
-    int gp_context_unref (GPContext *context)
-
-    int gp_widget_ref(CameraWidget *widget)
-    int gp_widget_unref(CameraWidget *widget)
-    int gp_widget_get_child_by_label(CameraWidget *widget, const char *label, CameraWidget **child)
-    int gp_widget_get_child_by_name(CameraWidget *widget, const char *label, CameraWidget **child)
-    int gp_widget_get_name(CameraWidget *widget, const char **name)
-    int gp_widget_set_name(CameraWidget *widget, const char *name)
-    int gp_widget_get_label(CameraWidget *widget, const char **label)
-    int gp_widget_count_choices(CameraWidget *widget)
-    int gp_widget_get_choice(CameraWidget *widget, int choice_number, const char **choice)
+import os
+import time
+from buildlapse.libgphoto2 cimport *
+from cython.operator cimport dereference
 
 cdef void error_func (GPContext *context, const char *text, void *data):
-            print("Error!!!!")
-            print(str(text))
+    print("libghoto2 error: "+text.decode())
 
 cdef void message_func (GPContext *context, const char *text, void *data):
-            print("Message!!!")
-            print(str(text))
+    print("libgphoto2: "+text.decode())
 
 cdef class GPTether:
     cdef Camera *_camera
@@ -65,6 +33,54 @@ cdef class GPTether:
         if ret < GP_OK:
             raise Exception("Couldn't trigger a capture")
 
+    def capture_and_download(self, outfile):
+        cdef CameraFilePath cpf
+        cdef int outfhandle = os.open(outfile, os.O_WRONLY|os.O_CREAT)
+        cdef int ret = gp_camera_capture(self._camera, GP_CAPTURE_IMAGE, &cpf, self._context)
+        if ret != GP_OK:
+            print("libgphoto2: Error during capture")
+        else:
+            self._download_file(cpf, outfhandle)
+
+    # timeout is in milliseconds
+    def handle_event(self, timeout):
+        cdef CameraEventType evtypev = GP_EVENT_UNKNOWN
+        cdef CameraEventType *evtype = &evtypev
+        cdef void *data
+        cdef int result = gp_camera_wait_for_event(self._camera, timeout, evtype, \
+                &data, self._context)
+        if result == GP_ERROR_NOT_SUPPORTED:
+            time.sleep(timeout)
+            return
+        cdef CameraFilePath *path = <CameraFilePath *> data
+        if result != GP_OK:
+            raise Exception("Couldn't handle event (error "+str(result)+")")
+        if dereference(evtype) == GP_EVENT_FOLDER_ADDED:
+            print("libgphoto2: folder added, name="+path.name)
+        elif dereference(evtype) == GP_EVENT_FILE_ADDED:
+            print("libgphoto2: File added")
+            # Currently, use the original camera file name for download
+            self._download_file(dereference(path), \
+                    os.open(path.name.decode(), os.O_WRONLY|os.O_CREAT))
+        elif dereference(evtype) == GP_EVENT_CAPTURE_COMPLETE:
+            print("libgphoto2: Capture complete")
+        elif dereference(evtype) == GP_EVENT_UNKNOWN:
+            print("libgphoto2: Unknown event type")
+
+    cdef _download_file(self, CameraFilePath path, int outfd):
+        print("Downloading file at "+path.folder.decode()+"/"+path.name.decode())
+        cdef CameraFileInfo info
+        gp_camera_file_get_info(self._camera, path.folder, path.name, &info, self._context)
+        if info.file.status == GP_FILE_STATUS_DOWNLOADED:
+            print("libgphoto2: File already downloaded")
+            return
+        cdef CameraFile *dstfile
+        if gp_file_new_from_fd(&dstfile, outfd) != GP_OK:
+            raise Exception("libgphoto2: Couldn't convert file descriptor to gphoto2 file")
+        if gp_camera_file_get(self._camera, path.folder, path.name, GP_FILE_TYPE_NORMAL, \
+                dstfile, self._context) != GP_OK:
+            raise Exception("libgphoto2: Couldn't transfer file from camera")
+
     @property
     def root_widget(self):
         cdef CameraWidget *cwidget
@@ -75,6 +91,7 @@ cdef class GPTether:
         ret._gpinit(cwidget)
         return ret
 
+        
     def __dealloc__(self): 
         gp_camera_unref(self._camera)
         gp_context_unref(self._context)
@@ -122,6 +139,21 @@ cdef class GPWidget(object):
             ret.append(choice)
         return ret
 
+    @property
+    def value(self):
+        # TODO check type (gp_widget_get_type(), if type==GP_WIDGET_RADIO or MENU)
+        cdef const char *value = None # Need to make this more general
+        gp_widget_get_value(self.widg, &value)
+        return value
+
+    @value.setter
+    def value(self, nval):
+        pass
+        #cdef char *value = str(nval)
+        #if set_config_action(self._context, self._camera, path, value) != GP_OK:
+        #    raise Exception("set_config_action() failed")
+
+
     def child_by_label(self, name):
         cdef CameraWidget *ret
         encname = name.encode()
@@ -147,10 +179,15 @@ def test():
     teth = GPTether()
     teth.connect_camera()
     #teth.trigger_capture()
+    #teth.capture_and_download("test.jpg")
+    #teth.handle_event(2000)
+    #teth.handle_event(2000)
     root = teth.root_widget
     print(root.name)
     print(root.label)
     shutterspeed = root.child_by_name("capturesettings").child_by_name("shutterspeed2")
     print(shutterspeed.name)
     print(shutterspeed.label)
-    print(shutterspeed.choices)
+    print("Shutterspeed choices: {}".format(shutterspeed.choices))
+    print("Number of choices: {}".format(len(shutterspeed.choices)))
+    print("Shutterspeed value: {}".format(shutterspeed.value))

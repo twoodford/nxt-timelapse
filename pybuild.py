@@ -5,6 +5,6 @@ from Cython.Distutils import build_ext
 setup(
     cmdclass = {'build_ext': build_ext},
     packages = ["buildlapse"],
-    ext_modules = [Extension("buildlapse.gphoto2", ["buildlapse/gphoto2.pyx"], libraries=["gphoto2"])]
+    ext_modules = [Extension("buildlapse.gphoto2", ["buildlapse/libgphoto2.pxd", "buildlapse/gphoto2.pyx"], libraries=["gphoto2"])]
 )
 
